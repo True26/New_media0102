@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Debug temporales (no necesarios en el repo)
+debug_*.py
+debug_*.html
+test_checkpoint.py
+
+# NO ignorar estos — GitHub Actions los necesita para el checkpoint:
+# links_recolectados.json
+# fase1_progreso.json

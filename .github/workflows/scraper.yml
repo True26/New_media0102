@@ -1,0 +1,48 @@
+name: Scraper TioPlus
+
+on:
+  workflow_dispatch:        # Trigger manual desde la pestaña Actions
+  schedule:
+    - cron: '0 3 * * *'    # Automatico cada dia a las 3am UTC (opcional)
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350    # 5h50min — para antes del limite de 6h de GitHub
+
+    permissions:
+      contents: write       # Necesario para hacer commit del JSON de vuelta al repo
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Instalar dependencias Python
+        run: pip install -r requirements.txt
+
+      - name: Instalar Playwright + Chromium
+        run: |
+          playwright install chromium
+          playwright install-deps chromium
+
+      - name: Ejecutar scraper
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: python scraper.py
+
+      - name: Guardar progreso en el repo
+        if: always()    # Siempre guarda, incluso si el job fue cancelado por timeout
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f links_recolectados.json fase1_progreso.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "scraper: actualizar catalogo [skip ci]"
+          git push
